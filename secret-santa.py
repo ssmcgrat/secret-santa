@@ -1,14 +1,16 @@
+import getopt
 import os
 import yaml
 import sys
 import random
+import smtplib
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'config.yml')
 
 class Person:
-	def __init__(self, name, invalid_matches):
+	def __init__(self, name, email, invalid_matches):
 		self.name = name
-		#self.email = email
+		self.email = email
 		self.invalid_matches = invalid_matches
 		
 	def __str__(self):
@@ -48,7 +50,30 @@ def create_pairs(g, r):
 	return pairs
 
 	
+def send_emails(pairs):
+	config = parse_yaml()
+	
+	server = smtplib.SMTP(config['SMTP_SERVER'], config['SMTP_PORT'])
+	server.starttls()
+	server.login(config['USERNAME'], config['PASSWORD'])
+	frm = config["FROM"]
+	for pair in pairs:
+		to = pair.giver.email
+		body = config['BODY']
+		body = body.replace("{santa}", pair.giver.name)
+		body = body.replace("{santee}", pair.reciever.name)
+		subject = config["SUBJECT"]
+		server.sendmail(frm, [to], body)
+	server.quit()
+	
 def main():
+	opts, args = getopt.getopt(sys.argv[1:], "shc", ["send", "help"])
+	send = False
+	for option, value in opts:
+		print(option)
+		if option in ("-s", "--send"):
+			send = True
+	
 	config = parse_yaml()
 	
 	participants = config["PARTICIPANTS"]
@@ -60,8 +85,9 @@ def main():
 		
 	givers = [] # list of Person objects, each Person will be giving a gift
 	for participant in participants:
-		name = participant # will later parse name out from email
+		name = participant.split(",")[0] # will later parse name out from email
 		name = name.strip()
+		email = participant.split(",")[1].strip()
 		invalid_matches = []
 		for pair in dont_pair:
 			names = [n.strip() for n in pair.split(",")]
@@ -69,7 +95,7 @@ def main():
 				for n in names:
 					if name != n:
 						invalid_matches.append(n)
-		person = Person(name, invalid_matches)
+		person = Person(name, email, invalid_matches)
 		givers.append(person)
 	
 	recievers = givers[:]	
@@ -78,6 +104,8 @@ def main():
 	for pair in pairs:
 		print(pair)
 	
+	if send:
+		send_emails(pairs)
 	
 	print("\n\ncomplete")
 	
