@@ -4,6 +4,11 @@ import yaml
 import sys
 import random
 import smtplib
+from os.path import basename
+import email
+from email.mime.application import MIMEApplication
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'config.yml')
 
@@ -50,10 +55,9 @@ def create_pairs(g, r):
 	return pairs
 
 	
-def send_emails(pairs):
+def send_emails_old(pairs):
 	config = parse_yaml()
 	
-	server = smtplib.SMTP(config['SMTP_SERVER'], config['SMTP_PORT'])
 	server.starttls()
 	server.login(config['USERNAME'], config['PASSWORD'])
 	frm = config["FROM"]
@@ -62,9 +66,38 @@ def send_emails(pairs):
 		body = config['BODY']
 		body = body.replace("{santa}", pair.giver.name)
 		body = body.replace("{santee}", pair.reciever.name)
-		subject = config["SUBJECT"]
-		server.sendmail(frm, [to], body)
+		subject=config["SUBJECT"]
+		message = 'Subject: {}\n\n{}'.format(subject, body)
+		server.sendmail(frm, [to], message)
 	server.quit()
+	
+def send_emails(pairs):
+	config = parse_yaml()
+	server = smtplib.SMTP(config['SMTP_SERVER'], config['SMTP_PORT'])
+	server.starttls()
+	server.login(config['USERNAME'], config['PASSWORD'])
+	f = r"C:\Users\Sean\Documents\python\secret-santa\secretsanta.ics"
+	#server = smtplib.SMTP(config['SMTP_SERVER'], config['SMTP_PORT'])
+	for pair in pairs:
+		msg = MIMEMultipart()
+		msg['From'] = config["FROM"]
+		msg['To'] = pair.giver.email
+		msg['Subject'] = config["SUBJECT"]
+		body = config['BODY']
+		body = body.replace("{santa}", pair.giver.name)
+		body = body.replace("{santee}", pair.reciever.name)
+		msg.attach(MIMEText(body))
+		with open(f, "rb") as fil:
+			part = MIMEApplication(
+			fil.read(),
+			Name=basename(f)
+		)
+		# After the file is closed
+		part['Content-Disposition'] = 'attachment; filename="%s"' % basename(f)
+		msg.attach(part)
+		server.sendmail(config["FROM"], pair.giver.email, msg.as_string())
+	server.close()
+		
 	
 def main():
 	opts, args = getopt.getopt(sys.argv[1:], "shc", ["send", "help"])
