@@ -9,6 +9,8 @@ import email
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from datetime import datetime
+from icalendar import Calendar, Event
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'config.yml')
 
@@ -32,6 +34,22 @@ class Pair:
 def parse_yaml(yaml_path=CONFIG_PATH):
     return yaml.load(open(yaml_path))
 
+def create_ics_file(year, month, day, start_hour, end_hour):
+	config = parse_yaml()
+	cal = Calendar()
+	dtstart = datetime(year, month, day, start_hour)
+	dtend = datetime(year, month, day, end_hour)
+	event = Event()
+	event.add("summary", config["summary"])
+	event.add("dtstart", dtstart)
+	event.add("dtend", dtend)
+	event.add("description", config["description"])
+	event.add("location", config["location"])
+	cal.add_component(event)
+	f = open('secret_santa.ics', 'wb')
+	f.write(cal.to_ical())
+	f.close()
+
 def choose_reciever(giver, recievers):
 	choice = random.choice(recievers)
 	if choice.name in giver.invalid_matches or giver.name == choice.name:
@@ -53,30 +71,13 @@ def create_pairs(g, r):
 		except:
 			return create_pairs(g, r)
 	return pairs
-
-	
-def send_emails_old(pairs):
-	config = parse_yaml()
-	
-	server.starttls()
-	server.login(config['USERNAME'], config['PASSWORD'])
-	frm = config["FROM"]
-	for pair in pairs:
-		to = pair.giver.email
-		body = config['BODY']
-		body = body.replace("{santa}", pair.giver.name)
-		body = body.replace("{santee}", pair.reciever.name)
-		subject=config["SUBJECT"]
-		message = 'Subject: {}\n\n{}'.format(subject, body)
-		server.sendmail(frm, [to], message)
-	server.quit()
 	
 def send_emails(pairs):
 	config = parse_yaml()
 	server = smtplib.SMTP(config['SMTP_SERVER'], config['SMTP_PORT'])
 	server.starttls()
 	server.login(config['USERNAME'], config['PASSWORD'])
-	f = r"C:\Users\Sean\Documents\python\secret-santa\secretsanta.ics"
+	f = r".\secret_santa.ics"
 	#server = smtplib.SMTP(config['SMTP_SERVER'], config['SMTP_PORT'])
 	for pair in pairs:
 		msg = MIMEMultipart()
@@ -108,6 +109,8 @@ def main():
 			send = True
 	
 	config = parse_yaml()
+
+	create_ics_file(config["dtstart_year"], config["dtstart_month"], config["dtstart_day"], config["dtstart_hour"], config["dtend_hour"])
 	
 	participants = config["PARTICIPANTS"]
 	dont_pair = config["DO-NOT-MATCH"]
