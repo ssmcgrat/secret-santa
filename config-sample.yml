@@ -1,0 +1,56 @@
+PARTICIPANTS:
+  - Sean, foo@gmail.com
+  - Maddie, bar@aol.com
+  - Brien, baz@gmail.com
+  - Guy, foo@gmail.com
+  - Liz, bar@gmail.com
+  - Devyn, baz@gmail.com
+  - Dani, foo@aol.com
+  - Andy, bar@gmail.com
+  - Eric, baz@gmail.com
+  - Aidan, foo@gmail.com
+  
+DO-NOT-MATCH:
+  - Maddie, Brien
+  - Maddie, Sean
+  - Maddie, Aidan
+  - Eric, Devyn
+  - Sean, Liz
+  
+SMTP_SERVER: smtp.gmail.com
+SMTP_PORT: 587
+USERNAME: "your_username"
+PASSWORD: "your_pwd"
+FROM: "your_address@gmail.com"
+SUBJECT: "Secret Santa Details 2019"
+
+BODY:
+  Dear {santa},
+
+
+  This is your official secret santa assignment for Dec 14, 2019 at our house. See attached iCalendar file for location and time information.
+
+
+  This year you are {santee}'s Secret Santa! Ho! Ho! Ho! and a bottle of rum!
+
+  
+  The maximum spending limit is $25.00
+
+  
+  Now Geaux out and buy something Real Nice. And don't forget to come wearing your best ugly sweater!
+
+
+  Love,
+
+
+  secret-santa.py, your holiday robot overlord.
+
+# icalendar info
+dtstart_year: 2019
+dtstart_month: 12
+dtstart_day: 14
+dtstart_hour: 18
+dtend_hour: 23
+summary: Secret Santa 2019
+description: Secret santa at Maddie, Brien, Sean and Guy's
+location: 404 Not Found Drive
